@@ -1,23 +1,23 @@
 import json
 import socketserver
 
-#def calc_fitness(text):
-#    try:
-#        num = text.count('c')
-#        if num > 0:
-#            score = f"FITNESS {num**2.5}"
-#        else:
-#            score = 'MOL_ERROR #FitnessProvider: unable to calculate fitness.'
-#        return f'{score}\n\n'
-#    except:
-#        return "FATAL ERROR\n"
-
 def calc_fitness(text):
     try:
-        score = text.count('c')**2.5
-        return f"{score}\n"
+        num = text.count('c')
+        if num > 0:
+            score = f"FITNESS {num**2.5}"
+        else:
+            score = 'MOL_ERROR #FitnessProvider: unable to calculate fitness.'
+        return f'{score}\n\n'
     except:
-        return "0.0\n"
+        return "FATAL ERROR\n"
+
+#def calc_fitness(text):
+#    try:
+#        score = text.count('c')**2.5
+#        return f"{score}\n"
+#    except:
+#        return "0.0\n"
 
 ENC = 'utf8' # enough with ascii?
 
