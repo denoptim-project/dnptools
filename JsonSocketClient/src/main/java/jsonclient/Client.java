@@ -23,11 +23,25 @@ public class Client {
     	Gson jsonConverter = new GsonBuilder()
     	        .create();
     	
+    	/*
     	List<String> allSmiles = Arrays.asList("C1CC1", 
     			"CC1=C(C(=O)C[C@@H]1OC(=O)[C@@H]2[C@H](C2(C)C)/C=C(\\C)/C(=O)OC)C/C=C\\C=C", 
     			"CCc(c1)ccc2[n+]1ccc3c2[nH]c4c3cccc4CCc1c[n+]2ccc3c4ccccc4[nH]c3c2cc1", 
     			"[Cu+2].[O-]S(=O)(=O)[O-]",
     			"");
+    	*/
+    	List<String> allSmiles = Arrays.asList("c_", 
+    			"",
+    			"cc_",
+    			"ccc_",
+    			"cccc_",
+    			"ccccc_",
+    			"cccccc_",
+    			"ccccccc_",
+    			"cccccccc_",
+    			"ccccccccc_",
+    			//"",
+    			"cccccccccc_");
     	
     	/*
     	 * We'll need shotdown hook 
@@ -42,17 +56,18 @@ public class Client {
         BufferedReader readerFromSocket = new BufferedReader(
         		new InputStreamReader(inputFromSocket));
         
-    	for (String smiles : allSmiles)
-    	{
+    	for (String smiles : allSmiles) {
+            // System.out.println(line);
+            /*
+        	try { Thread.sleep(500);
+            } catch (Throwable t) {t.printStackTrace();}
+            */
 	        JsonObject jsonObj = new JsonObject();
 	        jsonObj.addProperty("SMILES", smiles);
 	        
-	        System.out.println("Sending "+jsonObj);
-	        
 	        writerToSocket.println(jsonConverter.toJson(jsonObj));
 	        String answer = readerFromSocket.readLine();
-	        
-	        System.out.println("Answer is "+answer);
+            System.out.println("-->"+answer+" for "+jsonObj);
     	}
         
         socket.close();

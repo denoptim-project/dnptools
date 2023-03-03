@@ -1,16 +1,24 @@
 import json
 import socketserver
 
+
 def calc_fitness(text):
     try:
         num = text.count('c')
         if num > 0:
-            score = f"FITNESS {num**2.5}"
+            json_str = json.dumps({
+                'FITNESS': f"{num**2.5}"
+            })
         else:
-            score = 'MOL_ERROR #FitnessProvider: unable to calculate fitness.'
-        return f'{score}\n'
+            json_str = json.dumps({
+                'MOL_ERROR': '#FitnessProvider: unable to calculate fitness.'
+            })
     except:
-        return "FATAL ERROR\n"
+        json_str = json.dumps({
+            'FATAL_ERROR': 'Fitness provider is broken!'
+        })
+    return f'{json_str}\n'
+
 
 #def calc_fitness(text):
 #    try:
