@@ -8,7 +8,7 @@ def calc_fitness(text):
             score = f"FITNESS {num**2.5}"
         else:
             score = 'MOL_ERROR #FitnessProvider: unable to calculate fitness.'
-        return f'{score}\n\n'
+        return f'{score}\n'
     except:
         return "FATAL ERROR\n"
 
