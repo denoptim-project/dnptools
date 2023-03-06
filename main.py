@@ -8,7 +8,7 @@ def calc_fitness(json_obj):
         num = text.count('c')
         if num > 0:
             json_str = json.dumps({
-                'FITNESS': f"{num**2.5}",
+                'FITNESS': num**2.5,
                 'Client': json_obj['Client']
             })
         else:

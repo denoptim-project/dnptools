@@ -62,7 +62,7 @@ public class Client {
         	else
         		i++;
         	
-        	try { Thread.sleep(500);
+        	try { Thread.sleep(0);
             } catch (Throwable t) {t.printStackTrace();}
             
 	        JsonObject jsonObj = new JsonObject();
@@ -70,8 +70,15 @@ public class Client {
 	        jsonObj.addProperty("Client", clientID);
 	        
 	        writerToSocket.println(jsonConverter.toJson(jsonObj));
-	        String answer = readerFromSocket.readLine();
-            System.out.println("-->"+answer+" for "+jsonObj);
+	        
+	        JsonObject answer = jsonConverter.fromJson(
+	        		readerFromSocket.readLine(), JsonObject.class);
+	        
+	        String val = "none";
+	        if (answer.has("FITNESS"))
+	        	val = String.format("%.2f", Double.parseDouble(answer.get("FITNESS").toString()));
+	        	
+            System.out.println("--> "+answer.get("Client")+" val:" + val);
         	
         	// This will never be satisfied
         	if (answer.equals("NOT_POSSIBLE"))
