@@ -40,7 +40,6 @@ public class Client {
     			"ccccccc_",
     			"cccccccc_",
     			"ccccccccc_",
-    			//"",
     			"cccccccccc_");
     	
     	/*
@@ -64,6 +63,7 @@ public class Client {
             */
 	        JsonObject jsonObj = new JsonObject();
 	        jsonObj.addProperty("SMILES", smiles);
+	        jsonObj.addProperty("Client", "A");
 	        
 	        writerToSocket.println(jsonConverter.toJson(jsonObj));
 	        String answer = readerFromSocket.readLine();
