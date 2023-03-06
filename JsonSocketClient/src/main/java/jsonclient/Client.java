@@ -23,6 +23,10 @@ public class Client {
     	Gson jsonConverter = new GsonBuilder()
     	        .create();
     	
+    	String clientID = "Client"+System.currentTimeMillis();
+    	if (args.length==1)
+    		clientID = args[0];
+    		
     	List<String> allSmiles = Arrays.asList("c_", 
     			"",
     			"cc_",
@@ -63,7 +67,7 @@ public class Client {
             
 	        JsonObject jsonObj = new JsonObject();
 	        jsonObj.addProperty("SMILES", smiles);
-	        jsonObj.addProperty("Client", "A");
+	        jsonObj.addProperty("Client", clientID);
 	        
 	        writerToSocket.println(jsonConverter.toJson(jsonObj));
 	        String answer = readerFromSocket.readLine();
