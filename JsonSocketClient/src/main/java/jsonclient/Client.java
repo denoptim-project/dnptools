@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -32,8 +33,9 @@ public class Client {
 	
 	 Gson jsonConverter;
 	 String clientID;
-	 List<String> allSmiles = Arrays.asList("c_", 
+	 List<String> allSmiles = Arrays.asList("cccc_", 
 			"",
+			"c_",
 			"cc_",
 			"ccc_",
 			"cccc_",
@@ -44,10 +46,6 @@ public class Client {
 			"ccccccccc_",
 			"cccccccccc_");
 	
-	 Socket socket;
-	 PrintWriter writerToSocket;
-	 BufferedReader readerFromSocket;
-	
 	private  List<Task> submitted;
     private  ThreadPoolExecutor tpe;
     private  Map<Task,Future<Object>> futures;
@@ -57,7 +55,7 @@ public class Client {
     	Client c = new Client();
     	c.initialize(args);
     	c.run();
-    	c.terminate();
+    	System.out.println("END");
     }
     
     public void initialize(String[] args) throws UnknownHostException, IOException 
@@ -73,33 +71,55 @@ public class Client {
         submitted = new ArrayList<Task>();
     	tpe = new ThreadPoolExecutor(4, 4, 0L, TimeUnit.MILLISECONDS,
                 new ArrayBlockingQueue<Runnable>(1));
-    	
-    	/*
-    	 * We'll need shotdown hook to close the socket
-    	 * see https://stackoverflow.com/questions/8051863/how-can-i-close-the-socket-in-a-proper-way
-    	 */
-
-        socket = new Socket("localhost", 0xf17);
-        OutputStream outputSocket = socket.getOutputStream();
-        writerToSocket = new PrintWriter(outputSocket, true);
-    	
-        InputStream inputFromSocket = socket.getInputStream();
-        readerFromSocket = new BufferedReader(
-        		new InputStreamReader(inputFromSocket));
+              
+        // by default the ThreadPoolExecutor will throw an exception
+        tpe.setRejectedExecutionHandler(new RejectedExecutionHandler()
+        {
+            public void rejectedExecution(Runnable r, 
+                    ThreadPoolExecutor executor)
+            {
+                try
+                {
+                    // this will block if the queue is full
+                    executor.getQueue().put(r);
+                }
+                catch (InterruptedException ex)
+                {
+                    //nothing, really
+                }
+            }
+        });
     }
     
     private void run()
     {   
-        for (int i=0; i<4; i++)
+    	long starttime = System.currentTimeMillis();
+        for (int i=0; i<1000; i++)
         {
         	Task task = new Task("Tsk"+i);
         	submitted.add(task);
             futures.put(task, tpe.submit(task));
         }
-    }
-    
-    public void terminate() throws IOException {
-        socket.close();
+		tpe.shutdownNow();
+    	try {
+			tpe.awaitTermination(30, TimeUnit.SECONDS);
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+    	long endttime = System.currentTimeMillis();
+    	System.out.println("Runtime: "+(endttime-starttime)/100.0);
+    	
+    	try {
+			if (!tpe.awaitTermination(3, TimeUnit.SECONDS))
+			{
+			    tpe.shutdownNow(); //Cancel running tasks
+			}
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	System.out.println("END TPE");
     }
     
 //------------------------------------------------------------------------------
@@ -114,64 +134,85 @@ public class Client {
     		this.name = name;
     	}
 
-		public Object call() throws Exception {
-			keepAskingForFitness(name);
+		public Object call() throws Exception 
+		{
+	    	/*
+	    	 * We'll need shotdown hook to close the socket
+	    	 * see https://stackoverflow.com/questions/8051863/how-can-i-close-the-socket-in-a-proper-way
+	    	 */
+
+			Socket socket = new Socket("localhost", 0xf17);
+	        OutputStream outputSocket = socket.getOutputStream();
+	        PrintWriter writerToSocket = new PrintWriter(outputSocket, true);
+	    	
+	        InputStream inputFromSocket = socket.getInputStream();
+	        BufferedReader readerFromSocket = new BufferedReader(
+	        		new InputStreamReader(inputFromSocket));
+		
+	        boolean goon= true;
+	        int j=0;
+	        int i = 0;
+	        while (goon)
+	        {
+	        	j++;
+	        	String smiles = allSmiles.get(i);
+	        	if (i==(allSmiles.size()-1))
+	        		i=0;
+	        	else
+	        		i++;
+	            
+		        JsonObject jsonObj = new JsonObject();
+		        jsonObj.addProperty("SMILES", smiles);
+		        jsonObj.addProperty("Client", name);
+		        
+		        writerToSocket.println(jsonConverter.toJson(jsonObj));
+		        
+		        JsonObject answer = null;
+				try {
+					answer = jsonConverter.fromJson(
+							readerFromSocket.readLine(), JsonObject.class);
+				} catch (JsonSyntaxException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					System.exit(-1);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					System.exit(-1);
+				}
+				
+		        String val = "none";
+		        double expected = 0.0;
+		        if (answer.has("FITNESS"))
+		        {
+					double value = Double.parseDouble(answer.get("FITNESS").toString());
+		        	val = String.format("%.2f", value);
+
+					expected =  Math.pow(smiles.chars().filter(ch -> ch == 'c').count(),2.5);
+					
+					if (Math.abs(expected-value)>0.05)
+					{
+		            	System.out.println("Stopping because "+expected+"!="+value);
+		            	System.exit(-1);
+		            }	
+		        }
+		        
+	            String taskIdFromServer = answer.get("Client").getAsString();	
+		        
+	            System.out.println(j + "--> "+taskIdFromServer+" val:" + val);
+	            if (!name.equals(taskIdFromServer))
+	            {
+	            	System.out.println("Stopping because "+name+"!="+taskIdFromServer);
+	            	System.exit(-1);
+	            }
+	            
+	        	// This will never be satisfied
+	        	//if (answer.equals("NOT_POSSIBLE"))
+	        	if (j>0)
+	        		goon = false;
+	        }
+	        socket.close();
 			return null;
 		}
-    	
-    }
-    
-    private void keepAskingForFitness(String threadID)
-    {
-        boolean goon= true;
-        int i = 0;
-        while (goon)
-        {
-        	String smiles = allSmiles.get(i);
-        	if (i==(allSmiles.size()-1))
-        		i=0;
-        	else
-        		i++;
-        	
-        	try { Thread.sleep(0);
-            } catch (Throwable t) {t.printStackTrace();}
-            
-	        JsonObject jsonObj = new JsonObject();
-	        jsonObj.addProperty("SMILES", smiles);
-	        jsonObj.addProperty("Client", threadID);
-	        
-	        writerToSocket.println(jsonConverter.toJson(jsonObj));
-	        
-	        JsonObject answer = null;
-			try {
-				answer = jsonConverter.fromJson(
-						readerFromSocket.readLine(), JsonObject.class);
-			} catch (JsonSyntaxException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				System.exit(-1);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				System.exit(-1);
-			}
-	        
-	        String val = "none";
-	        if (answer.has("FITNESS"))
-	        	val = String.format("%.2f", Double.parseDouble(answer.get("FITNESS").toString()));
-
-            String taskIdFromServer = answer.get("Client").getAsString();	
-	        
-            System.out.println("--> "+taskIdFromServer+" val:" + val);
-            if (!threadID.equals(taskIdFromServer))
-            {
-            	System.out.println("Stopping because "+threadID+"!="+taskIdFromServer);
-            	System.exit(-1);
-            }
-            
-        	// This will never be satisfied
-        	if (answer.equals("NOT_POSSIBLE"))
-        		goon = false;
-        }
     }
 }
