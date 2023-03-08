@@ -15,7 +15,6 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 
@@ -33,18 +32,7 @@ public class Client {
 	
 	 Gson jsonConverter;
 	 String clientID;
-	 List<String> allSmiles = Arrays.asList("cccc_", 
-			"",
-			"c_",
-			"cc_",
-			"ccc_",
-			"cccc_",
-			"ccccc_",
-			"cccccc_",
-			"ccccccc_",
-			"cccccccc_",
-			"ccccccccc_",
-			"cccccccccc_");
+	 List<String> allSmiles = Arrays.asList("C", "CCO", "CCCO", "CC(C)OC");
 	
 	private  List<Task> submitted;
     private  ThreadPoolExecutor tpe;
@@ -94,9 +82,10 @@ public class Client {
     private void run()
     {   
     	long starttime = System.currentTimeMillis();
-        for (int i=0; i<1000; i++)
+    	
+        for (String smiles : allSmiles)
         {
-        	Task task = new Task("Tsk"+i);
+        	Task task = new Task(smiles);
         	submitted.add(task);
             futures.put(task, tpe.submit(task));
         }
@@ -108,7 +97,7 @@ public class Client {
 			e1.printStackTrace();
 		}
     	long endttime = System.currentTimeMillis();
-    	System.out.println("Runtime: "+(endttime-starttime)/100.0);
+    	System.out.println("Run time: "+(endttime-starttime)/100.0);
     	
     	try {
 			if (!tpe.awaitTermination(3, TimeUnit.SECONDS))
@@ -119,7 +108,6 @@ public class Client {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-    	System.out.println("END TPE");
     }
     
 //------------------------------------------------------------------------------
@@ -129,88 +117,68 @@ public class Client {
      */
     public class Task implements Callable<Object>
     {
-    	private String name = "noname";
-    	public Task(String name) {
-    		this.name = name;
+    	private String smiles;
+    	
+    	public Task(String smiles)
+    	{
+    		this.smiles = smiles;
     	}
-
+    	
 		public Object call() throws Exception 
 		{
-	    	/*
-	    	 * We'll need shotdown hook to close the socket
-	    	 * see https://stackoverflow.com/questions/8051863/how-can-i-close-the-socket-in-a-proper-way
-	    	 */
 
 			Socket socket = new Socket("localhost", 0xf17);
 	        OutputStream outputSocket = socket.getOutputStream();
 	        PrintWriter writerToSocket = new PrintWriter(outputSocket, true);
 	    	
+	        Runtime.getRuntime().addShutdownHook(new Thread(){public void run(){
+	            try {
+	                socket.close();
+	            } catch (IOException e) { /* failed */ }
+	        }});
+	        
 	        InputStream inputFromSocket = socket.getInputStream();
 	        BufferedReader readerFromSocket = new BufferedReader(
 	        		new InputStreamReader(inputFromSocket));
 		
-	        boolean goon= true;
-	        int j=0;
-	        int i = 0;
-	        while (goon)
+	        JsonObject jsonObj = new JsonObject();
+	        jsonObj.addProperty("SMILES", smiles);
+	        
+	        writerToSocket.println(jsonConverter.toJson(jsonObj)
+	        		+ System.getProperty("line.separator"));
+	        
+	        JsonObject answer = null;
+			try {
+				answer = jsonConverter.fromJson(
+						readerFromSocket.readLine(), JsonObject.class);
+			} catch (JsonSyntaxException e) {
+				e.printStackTrace();
+				System.exit(-1);
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.exit(-1);
+			}
+			
+	        String scoreStr = "none";
+	        double expected = 0.0;
+	        if (answer.has("SCORE"))
 	        {
-	        	j++;
-	        	String smiles = allSmiles.get(i);
-	        	if (i==(allSmiles.size()-1))
-	        		i=0;
-	        	else
-	        		i++;
-	            
-		        JsonObject jsonObj = new JsonObject();
-		        jsonObj.addProperty("SMILES", smiles);
-		        jsonObj.addProperty("Client", name);
-		        
-		        writerToSocket.println(jsonConverter.toJson(jsonObj));
-		        
-		        JsonObject answer = null;
-				try {
-					answer = jsonConverter.fromJson(
-							readerFromSocket.readLine(), JsonObject.class);
-				} catch (JsonSyntaxException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-					System.exit(-1);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-					System.exit(-1);
-				}
-				
-		        String val = "none";
-		        double expected = 0.0;
-		        if (answer.has("FITNESS"))
-		        {
-					double value = Double.parseDouble(answer.get("FITNESS").toString());
-		        	val = String.format("%.2f", value);
+				double value = Double.parseDouble(answer.get("SCORE").toString());
+				scoreStr = String.format("%.2f", value);
 
-					expected =  Math.pow(smiles.chars().filter(ch -> ch == 'c').count(),2.5);
-					
-					if (Math.abs(expected-value)>0.05)
-					{
-		            	System.out.println("Stopping because "+expected+"!="+value);
-		            	System.exit(-1);
-		            }	
-		        }
-		        
-	            String taskIdFromServer = answer.get("Client").getAsString();	
-		        
-	            System.out.println(j + "--> "+taskIdFromServer+" val:" + val);
-	            if (!name.equals(taskIdFromServer))
-	            {
-	            	System.out.println("Stopping because "+name+"!="+taskIdFromServer);
+				// WARNING: this is an hard-coded calculation of the score 
+				// as done in the server.
+				expected =  Math.pow(smiles.chars().filter(ch -> ch == 'C').count(),2.5);
+				
+				if (Math.abs(expected-value)>0.05)
+				{
+	            	System.out.println("Stopping because "+expected+"!="+value);
 	            	System.exit(-1);
-	            }
-	            
-	        	// This will never be satisfied
-	        	//if (answer.equals("NOT_POSSIBLE"))
-	        	if (j>0)
-	        		goon = false;
+	            }	
 	        }
+	        
+            System.out.println("-->  score " + scoreStr + " for " + smiles);
+	            
 	        socket.close();
 			return null;
 		}
