@@ -1,12 +1,20 @@
-This should be done in an environment that includes maven. The dnp_devel from https://github.com/denoptim-project/DENOPTIM/blob/41a53d8b5ba740ce92c4c37899a30011370caefe/environment.yml  can be used for this purpose.
 
+## Prepare the Environment
+To build the java client we need an environment that includes maven. You can create such environment with conda:
+```
+conda env create -f environment.yml
+```
+followed by
+```
+conda activate json_client-server
+```
 
+## Run the example 
 To run the server
 ```
 python python_server/server.py
 ```
-
-To compile and run the java client
+Once the server is running, we can compile and run the java client
 ```
 cd java_client/
 mvn package
