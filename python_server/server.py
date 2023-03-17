@@ -37,11 +37,9 @@ def calc_fitness(json_obj):
     return f'{json_str}\n'
 
 
-ENC = 'utf8' # enough with ascii?
-
 class FitnessHandler(socketserver.StreamRequestHandler):
     def handle(self):
-        line = self.rfile.readlines(1)[0].strip().decode(ENC)
+        line = self.rfile.readlines(1)[0].strip().decode('utf8')
         try:
             json_obj = json.loads(line)
             answer = calc_fitness(json_obj)
@@ -53,7 +51,7 @@ class FitnessHandler(socketserver.StreamRequestHandler):
                 'ERROR': '#SocketServer: could not load JSON',
             })
             answer = f'{json_str}\n'
-        self.wfile.write(answer.encode(ENC))
+        self.wfile.write(answer.encode('utf8'))
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 0xf17  # 3863
