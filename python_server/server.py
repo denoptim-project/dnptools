@@ -39,7 +39,7 @@ def calc_fitness(json_obj):
 
 class FitnessHandler(socketserver.StreamRequestHandler):
     def handle(self):
-        line = self.rfile.readlines(1)[0].strip().decode('utf8')
+        line = self.rfile.read().decode('utf8')
         try:
             json_obj = json.loads(line)
             answer = calc_fitness(json_obj)
