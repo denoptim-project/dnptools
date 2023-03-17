@@ -10,6 +10,7 @@
 # 4) CTRL+C to kill the server
 #
 
+import sys
 import json
 import socketserver
 
@@ -46,7 +47,7 @@ class FitnessHandler(socketserver.StreamRequestHandler):
             # NB: the use of the string `SMILES` is part of a convention.
             print(f"--- for SMILES {json_obj['SMILES']} I reply: {answer.strip()} ---")
         except:
-            print(f"ERROR: could not load JSON from {line}")
+            print(f"ERROR: could not load JSON from {line}", file=sys.stderr)
             json_str = json.dumps({
                 'ERROR': '#SocketServer: could not load JSON',
             })
