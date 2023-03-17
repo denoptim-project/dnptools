@@ -14,47 +14,60 @@ import sys
 import json
 import socketserver
 
+MY_NAME = "SocketServer"
+HOST = "localhost"
+PORT = 0xf17  # 3863
 
-def calc_fitness(json_obj):
-    # NB: the use of the string `SMILES` is part of a convention.
-    text = json_obj['SMILES']
+# NB: the strings defined here are part of a convention.
+JSON_KEY_SMILES = 'SMILES'
+JSON_KEY_SCORE = 'SCORE'
+JSON_KEY_ERROR = 'ERROR'
+
+
+class FitnessError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+        self.json_errmsg = { JSON_KEY_ERROR : f"#{MY_NAME}: {message}" }
+
+
+def calc_fitness(message):
     try:
-        num = text.count('C')
-        if num > 0:
-            # NB: the use of the string `SCORE` is part of a convention.
-            json_str = json.dumps({
-                'SCORE': num**2.5,
-            })
-        else:
-            # NB: the use of the string `ERROR` is part of a convention.
-            json_str = json.dumps({
-                'ERROR': '#SocketServer: unable to calculate fitness.',
-            })
-    except:
-        # NB: the use of the string `ERROR` is part of a convention.
-        json_str = json.dumps({
-            'ERROR': '#SocketServer: scoring function is broken!',
+        json_msg = json.loads(message)
+        text = json_msg[JSON_KEY_SMILES]
+    except json.decoder.JSONDecodeError as e:
+        raise FitnessError(f"Invalid JSON: {e}")
+    except KeyError:
+        raise FitnessError("Missing SMILES key in JSON object.")
+
+    num = text.count('C')
+    if num > 0:
+        response = json.dumps({ 
+            JSON_KEY_SCORE : num**2.5,
         })
-    return f'{json_str}\n'
+    else:
+        raise FitnessError("Unable to calculate fitness.")
+
+    # server logging
+    print(f"for SMILES {text} I reply: {response.strip()}")
+    return response
 
 
 class FitnessHandler(socketserver.StreamRequestHandler):
     def handle(self):
-        line = self.rfile.read().decode('utf8')
+        message = self.rfile.read().decode('utf8')
         try:
-            json_obj = json.loads(line)
-            answer = calc_fitness(json_obj)
-            # NB: the use of the string `SMILES` is part of a convention.
-            print(f"--- for SMILES {json_obj['SMILES']} I reply: {answer.strip()} ---")
-        except:
-            print(f"ERROR: could not load JSON from {line}", file=sys.stderr)
-            json_str = json.dumps({
-                'ERROR': '#SocketServer: could not load JSON',
-            })
-            answer = f'{json_str}\n'
-        self.wfile.write(answer.encode('utf8'))
+            answer = calc_fitness(message)
+        except FitnessError as e:
+            print('Error:', e, file=sys.stderr)
+            answer = json.dumps(e.json_errmsg)
+        finally:
+            answer += '\n'
+            self.wfile.write(answer.encode('utf8'))
+
 
 if __name__ == "__main__":
-    HOST, PORT = "localhost", 0xf17  # 3863
-    with socketserver.ThreadingTCPServer((HOST,PORT), FitnessHandler) as server:
+    with socketserver.ThreadingTCPServer(
+        (HOST,PORT), 
+        FitnessHandler
+    ) as server:
         server.serve_forever()
