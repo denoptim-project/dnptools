@@ -37,7 +37,7 @@ def calc_fitness(message):
     except json.decoder.JSONDecodeError as e:
         raise FitnessError(f"Invalid JSON: {e}")
     except KeyError:
-        raise FitnessError("Missing SMILES key in JSON object.")
+        raise FitnessError(f"Missing {JSON_KEY_SMILES} key in JSON object.")
 
     num = text.count('C')
     if num > 0:
@@ -48,7 +48,7 @@ def calc_fitness(message):
         raise FitnessError("Unable to calculate fitness.")
 
     # server logging
-    print(f"for SMILES {text} I reply: {response.strip()}")
+    print(f"for {JSON_KEY_SMILES} {text} I reply: {response.strip()}")
     return response
 
 
