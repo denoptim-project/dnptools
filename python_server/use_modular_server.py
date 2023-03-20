@@ -7,17 +7,13 @@ import denoptim.ScoringServer
 HOST = "localhost"
 PORT = 0xf17  # 3863
 
-# NB: the strings defined here are part of a convention.
-JSON_KEY_SMILES = 'SMILES'
-JSON_KEY_SCORE = 'SCORE'
-JSON_KEY_ERROR = 'ERROR'
 
-
-def calc_fitness(json_msg):
+def scoring_function(json_msg):
     try:
-        text = json_msg[JSON_KEY_SMILES]
+        text = json_msg[denoptim.ScoringServer.JSON_KEY_SMILES]
     except KeyError:
-        raise Exception(f"Missing {JSON_KEY_SMILES} key in JSON object.")
+        raise Exception(f"Missing {denoptim.ScoringServer.JSON_KEY_SMILES} key "
+                        f"in JSON object.")
 
     num = text.count('C')
     if num > 0:
@@ -29,7 +25,7 @@ def calc_fitness(json_msg):
 
 def get_score(smiles):
     jsonRequest = json.dumps({
-        JSON_KEY_SMILES: smiles,
+        denoptim.ScoringServer.JSON_KEY_SMILES: smiles,
     })
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((HOST, PORT))
@@ -43,30 +39,27 @@ def get_score(smiles):
             response += data
         s.close()
     jsonResponse = json.loads(response)
-    #print(f"Received {jsonResponse}")
     try:
-        score = jsonResponse[JSON_KEY_SCORE]
+        score = jsonResponse[denoptim.ScoringServer.JSON_KEY_SCORE]
     except KeyError:
         try:
             score = float('NaN')
-            print(jsonResponse[JSON_KEY_ERROR])
+            print(jsonResponse[denoptim.ScoringServer.JSON_KEY_ERROR])
         except KeyError:
-            raise Exception(f"Neither {JSON_KEY_SMILES} nor {JSON_KEY_ERROR} "
+            raise Exception(f"Neither {denoptim.ScoringServer.JSON_KEY_SMILES} "
+                            f"nor {denoptim.ScoringServer.JSON_KEY_ERROR} "
                             f"key in JSON object.")
     return score
 
 
 if __name__ == "__main__":
     print('Hello, from main')
-    denoptim.ScoringServer.start(calc_fitness, HOST, PORT)
+    denoptim.ScoringServer.start(scoring_function, HOST, PORT)
 
     print('Now we use the server to do some work...')
     print('Score for C: ', get_score('C'))
     print('Score for CCO: ', get_score('CCO'))
-    print('Score for CCCO: ', get_score('CCCO'))
+    print('Score for C(C)CCO: ', get_score('C(C)CCO'))
 
     print('Finally, we close the server')
     denoptim.ScoringServer.stop(HOST, PORT)
-
-
-
