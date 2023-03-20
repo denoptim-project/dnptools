@@ -1,14 +1,4 @@
-# An example of socket server accepting only requests in JSON format (string)
-# and replying with the same format.
-#
-# Usage:
-# 1) start this server with `python main.py`
-# 2) test it using a dummy client with
-#    `echo "{\"SMILES\": \"CCO\"}" | nc localhost 3863`
-#    Be careful about escaping the double quotation marks properly.
-# 3) use any other client sending requests to localhost 3863
-# 4) CTRL+C to kill the server
-#
+# An example of a tool using the modular scoring server.
 
 import json
 import socket
