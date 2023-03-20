@@ -49,6 +49,7 @@ public class Client {
     public void initialize(String[] args) throws UnknownHostException, IOException 
     {
     	jsonConverter = new GsonBuilder()
+    			.setPrettyPrinting()
     	        .create();
     	
     	clientID = "Client"+System.currentTimeMillis();
@@ -144,8 +145,9 @@ public class Client {
 	        JsonObject jsonObj = new JsonObject();
 	        jsonObj.addProperty("SMILES", smiles);
 	        
-	        writerToSocket.println(jsonConverter.toJson(jsonObj)
-	        		+ System.getProperty("line.separator"));
+	        String json = jsonConverter.toJson(jsonObj);
+	        writerToSocket.println(json);
+	        socket.shutdownOutput();
 	        
 	        JsonObject answer = null;
 			try {
