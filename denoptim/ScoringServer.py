@@ -1,3 +1,22 @@
+"""ScoringServer
+
+This module provides a shortcut to create socket servers able to provide
+scores according to the conventions of DENOPTIM
+(https://github.com/denoptim-project/DENOPTIM). Namely,
+    * use a JSON formatted string (UTF-8) for both request and response,
+    * use conventional JSON member keys (See ``JSON_KEY_*`` attributes).
+
+To use this module, first import it:
+    ``from denoptim import ScoringServer``
+then you can start a server that runs ``some_function`` to calculate the score
+for any JSON-formatted request sent to ``hostname:port``. The JSON
+request is passed to ``some_function`` so the definition of such function
+controls what information is used to calculate the score:
+    ``ScoringServer.start(some_function, hostname, port)``
+Once, you are done using the server, you must shut it down like this:
+    ``ScoringServer.stop(hostname, port)``
+
+"""
 import socket
 import sys
 import json
@@ -13,12 +32,66 @@ JSON_KEY_ERROR = 'ERROR'
 
 
 class ScoreError(Exception):
+    """Formats and exception as a JSON object adhering to DENOPTIM's convention.
+
+    The JSON format is used to communicate any result to the client waiting for
+    an answer, i.e., waiting for a score. If an exception occurs, we must
+    communicate that the score cannot be produced and why. This method creates
+    the JSON response that conveys this information to DENOPTIM. Such response
+    is accessible as ``self.json_errmsg``"""
     def __init__(self, message):
         super().__init__(message)
-        self.json_errmsg = { JSON_KEY_ERROR : f"#{MY_NAME}: {message}" }
+        self.json_errmsg = {JSON_KEY_ERROR: f"#{MY_NAME}: {message}"}
 
 
-def make_score_request_handler(scoring_function):
+def start(scoring_function, host: str = "localhost", port: int = 0xf17):
+    """Starts a separate thread that creates and runs the server.
+
+    Parameters
+    ----------
+    scoring_function :
+        The function the server should use to calculate the score for a given
+        request.
+    host : str
+        Either a hostname in internet domain notation like ``host.name.org`` or
+        an IPv4 address like ``100.50.200.5``.
+    port : int
+        the port number."""
+    serverThread = Thread(target=__run_server, args=[scoring_function,
+                                                     host, port])
+    serverThread.start()
+
+
+def __run_server(scoring_function, host: str = "localhost", port: int = 0xf17):
+    """Start the server and keeps it running forever.
+
+    Parameters
+    ----------
+    scoring_function :
+        The function the server should use to calculate the score for a given
+        request.
+    host : str
+        Either a hostname in internet domain notation like ``host.name.org`` or
+        an IPv4 address like ``100.50.200.5``.
+    port : int
+        the port number.
+    """
+    CustomHandler = __make_score_request_handler(scoring_function)
+    with socketserver.ThreadingTCPServer(
+            (host, port),
+            CustomHandler
+    ) as server:
+        server.serve_forever()
+
+
+def __make_score_request_handler(scoring_function):
+    """Factory creating a customized request handler from the given function.
+
+    Parameters
+    ----------
+    scoring_function :
+        The function the handler should use to calculate the score for a given
+        request."""
     class ScoreRequestHandler(socketserver.StreamRequestHandler):
         def handle(self):
             message = self.rfile.read().decode('utf8')
@@ -40,24 +113,22 @@ def make_score_request_handler(scoring_function):
             finally:
                 answer += '\n'
                 self.wfile.write(answer.encode('utf8'))
-                self.wfile.close()
     return ScoreRequestHandler
 
 
-def start(scoring_function, host: str = "localhost", port: int = 0xf17):
-    serverThread = Thread(target=run_server, args=[scoring_function, host, port])
-    serverThread.start()
-
-
 def stop(host: str = "localhost", port: int = 0xf17):
-    socket_connection = socket.create_connection((host, port))
-    socket_connection.send('shutdown'.encode('utf8'))
+    """Sends a shutdown request to the server to close it for good.
 
-
-def run_server(scoring_function, host: str = "localhost", port: int = 0xf17):
-    CustomHandler = make_score_request_handler(scoring_function)
-    with socketserver.ThreadingTCPServer(
-            (host,port),
-            CustomHandler
-    ) as server:
-        server.serve_forever()
+    Parameters
+    ----------
+    host : str
+        Either a hostname in internet domain notation like ``host.name.org`` or
+        an IPv4 address like ``100.50.200.5``.
+    port : int
+        the port number.
+    """
+    try:
+        socket_connection = socket.create_connection((host, port))
+        socket_connection.send('shutdown'.encode('utf8'))
+    except Exception as e:
+        raise Exception('Could not communicate with socket server.', e)
