@@ -1,4 +1,4 @@
-"""ScoringServer
+"""scoringservice
 
 This module provides a shortcut to create socket servers able to provide
 scores according to the conventions of DENOPTIM
@@ -7,14 +7,14 @@ scores according to the conventions of DENOPTIM
     * use conventional JSON member keys (See ``JSON_KEY_*`` attributes).
 
 To use this module, first import it:
-    ``from denoptim import ScoringServer``
+    ``from dnptools import scoringservice``
 then you can start a server that runs ``some_function`` to calculate the score
 for any JSON-formatted request sent to ``hostname:port``. The JSON
 request is passed to ``some_function`` so the definition of such function
 controls what information is used to calculate the score:
-    ``ScoringServer.start(some_function, hostname, port)``
+    ``scoringservice.start(some_function, hostname, port)``
 Once, you are done using the server, you must shut it down like this:
-    ``ScoringServer.stop(hostname, port)``
+    ``scoringservice.stop(hostname, port)``
 
 """
 import socket
@@ -23,7 +23,7 @@ import json
 import socketserver
 from threading import Thread
 
-MY_NAME = "ScoringServer"
+MY_NAME = "scoringservice"
 
 # NB: the strings defined here are part of a convention.
 JSON_KEY_SMILES = 'SMILES'

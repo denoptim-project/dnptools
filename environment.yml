@@ -1,7 +1,5 @@
-name: json_client-server
+name: denoptim_tools
 channels:
   - conda-forge
 dependencies:
-  - openjdk=11.0*
-  - maven
   - python

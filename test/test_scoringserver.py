@@ -1,8 +1,11 @@
 # An example of a tool using the modular scoring server.
+#
+# WARNING: this is a code stub
+#
 
 import json
 import socket
-from denoptim import ScoringServer
+from dnptools import scoringservice
 
 
 HOST = "localhost"
