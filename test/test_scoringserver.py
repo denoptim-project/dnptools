@@ -14,9 +14,9 @@ PORT = 0xf17  # 3863
 
 def scoring_function(json_msg):
     try:
-        text = json_msg[ScoringServer.JSON_KEY_SMILES]
+        text = json_msg[scoringservice.JSON_KEY_SMILES]
     except KeyError:
-        raise Exception(f"Missing {ScoringServer.JSON_KEY_SMILES} key "
+        raise Exception(f"Missing {scoringservice.JSON_KEY_SMILES} key "
                         f"in JSON object.")
 
     num = text.count('C')
@@ -29,7 +29,7 @@ def scoring_function(json_msg):
 
 def get_score(smiles):
     jsonRequest = json.dumps({
-        ScoringServer.JSON_KEY_SMILES: smiles,
+        scoringservice.JSON_KEY_SMILES: smiles,
     })
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((HOST, PORT))
@@ -44,21 +44,21 @@ def get_score(smiles):
         s.close()
     jsonResponse = json.loads(response)
     try:
-        score = jsonResponse[ScoringServer.JSON_KEY_SCORE]
+        score = jsonResponse[scoringservice.JSON_KEY_SCORE]
     except KeyError:
         try:
             score = float('NaN')
-            print(jsonResponse[ScoringServer.JSON_KEY_ERROR])
+            print(jsonResponse[scoringservice.JSON_KEY_ERROR])
         except KeyError:
-            raise Exception(f"Neither {ScoringServer.JSON_KEY_SMILES} "
-                            f"nor {ScoringServer.JSON_KEY_ERROR} "
+            raise Exception(f"Neither {scoringservice.JSON_KEY_SMILES} "
+                            f"nor {scoringservice.JSON_KEY_ERROR} "
                             f"key in JSON object.")
     return score
 
 
 if __name__ == "__main__":
     print('Hello, from main')
-    ScoringServer.start(scoring_function, HOST, PORT)
+    scoringservice.start(scoring_function, HOST, PORT)
 
     print('Now we use the server to do some work...')
     print('Score for C: ', get_score('C'))
@@ -66,4 +66,4 @@ if __name__ == "__main__":
     print('Score for C(C)CCO: ', get_score('C(C)CCO'))
 
     print('Finally, we close the server')
-    ScoringServer.stop(HOST, PORT)
+    scoringservice.stop(HOST, PORT)
