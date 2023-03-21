@@ -1,5 +1,6 @@
-name: denoptim_tools
+name: dnptools_devel
 channels:
   - conda-forge
 dependencies:
   - python
+  - pytest

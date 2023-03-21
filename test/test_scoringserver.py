@@ -1,18 +1,25 @@
-# An example of a tool using the modular scoring server.
-#
-# WARNING: this is a code stub
-#
-
 import json
+import math
 import socket
 from dnptools import scoringservice
 
 
-HOST = "localhost"
-PORT = 0xf17  # 3863
-
-
 def scoring_function(json_msg):
+    """
+    Dummy scoring function that counts the 'C' characters and rises them to
+    the 2.5th power.
+
+    Parameters
+    ----------
+    json_msg : str
+        The JSON formatted string that serialized the object to evaluate.
+        We assume this JSON object contains member 'SMILES' the value of which
+        is the string where we count the 'C' characters.
+
+    Returns
+    -------
+    The numerical score, i.e., N**2.5 where N is the number of 'C' characters.
+    """
     try:
         text = json_msg[scoringservice.JSON_KEY_SMILES]
     except KeyError:
@@ -27,12 +34,29 @@ def scoring_function(json_msg):
     return response
 
 
-def get_score(smiles):
+def __get_score(smiles, host, port):
+    """
+    Wrapper that takes a string and puts it as the value of the JSON member
+    'SMILES'.
+
+    Parameters
+    ----------
+    smiles : str
+        the string to use as SMILES.
+    host : str
+        the identifier of the host
+    port : int
+        the port number
+
+    Returns
+    -------
+    The numerical value of the score.
+    """
     jsonRequest = json.dumps({
         scoringservice.JSON_KEY_SMILES: smiles,
     })
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((HOST, PORT))
+        s.connect((host, port))
         s.sendall(jsonRequest.encode('utf8'))
         s.shutdown(socket.SHUT_WR)
         response = b''
@@ -56,14 +80,14 @@ def get_score(smiles):
     return score
 
 
-if __name__ == "__main__":
-    print('Hello, from main')
-    scoringservice.start(scoring_function, HOST, PORT)
-
-    print('Now we use the server to do some work...')
-    print('Score for C: ', get_score('C'))
-    print('Score for CCO: ', get_score('CCO'))
-    print('Score for C(C)CCO: ', get_score('C(C)CCO'))
-
-    print('Finally, we close the server')
-    scoringservice.stop(HOST, PORT)
+def test_scoringservice():
+    # find available port: we assume it stays available for a while!
+    sock = socket.socket()
+    host = ''
+    sock.bind((host, 0))
+    port = sock.getsockname()[1]
+    sock.close()
+    scoringservice.start(scoring_function, host, port)
+    score = __get_score('C=C', host, port)
+    assert math.isclose(2**2.5, score)
+    scoringservice.stop(host, port)
