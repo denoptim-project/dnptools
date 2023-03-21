@@ -1,0 +1,40 @@
+{% set name = "dnptools" %}
+{% set version = "0.0.1" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/dnptools-{{ version }}.tar.gz
+  sha256: 369342b4a07cbfcc8ef9ad6b1b8cd7ed668b678f4e816404fc9fb2de580fa55c
+
+build:
+  noarch: python
+  script: {{ PYTHON }} -m pip install . -vv
+  number: 0
+
+requirements:
+  host:
+    - python >=3.7
+    - hatchling
+    - pip
+  run:
+    - python >=3.7
+
+test:
+  imports:
+    - dnptools
+  commands:
+    - pip check
+  requires:
+    - pip
+
+about:
+  summary: Python utilities for working with DENOPTIM (https://github.com/denoptim-project/DENOPTIM)
+  license: AGPL-3.0
+  license_file: LICENSE
+
+extra:
+  recipe-maintainers:
+    - marco-foscato
