@@ -40,12 +40,6 @@ jobs:
       run: |
         conda config --set anaconda_upload yes
         conda build -c conda-forge  .
-#      env:
-#        DNPTOOLS_VERSION: ${{ steps.get_version.outputs.VERSION }}
+      env:
+        DNPTOOLS_VERSION: ${{ steps.get_version.outputs.VERSION }}
 
-    - name: Bash
-      shell: bash -el {0}
-      run: |
-        conda build -V
-        conda info
-        conda list
