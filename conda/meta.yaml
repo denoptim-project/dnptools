@@ -2,7 +2,8 @@
 
 package:
   name: {{ name|lower }}
-  version: {{ environ.get('DNPTOOLS_VERSION', '') }}
+  version: '0.0.3'
+#  version: {{ environ.get('DNPTOOLS_VERSION', '') }}
 
 source:
   path: ..

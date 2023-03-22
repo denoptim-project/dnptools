@@ -40,8 +40,7 @@ jobs:
       run: |
         conda build -V
         conda info
-        conda list
-        conda build -V
+        conda build -c conda-forge  .
 
     - name: Bash2
       shell: bash -el {0}
