@@ -35,7 +35,9 @@ jobs:
     - name: Build package and publish
       run: |
         conda config --set anaconda_upload yes
+        conda list
+        conda info --env
         conda build -c conda-forge  .
       env:
-        DENOPTIM_VERSION: ${{ steps.get_version.outputs.VERSION }}
+        DNPTOOLS_VERSION: ${{ steps.get_version.outputs.VERSION }}
 

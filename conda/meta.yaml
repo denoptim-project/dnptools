@@ -2,7 +2,7 @@
 
 package:
   name: {{ name|lower }}
-  version: {{ environ.get('DENOPTIM_VERSION', '') }}
+  version: {{ environ.get('DNPTOOLS_VERSION', '') }}
 
 source:
   path: ..
