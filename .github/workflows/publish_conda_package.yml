@@ -37,6 +37,9 @@ jobs:
         conda config --set anaconda_upload yes
         conda list
         conda info --env
+        conda activate anaconda-client-env
+        conda list
+        conda info --env
         conda build -c conda-forge  .
       env:
         DNPTOOLS_VERSION: ${{ steps.get_version.outputs.VERSION }}
