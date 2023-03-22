@@ -19,3 +19,7 @@ authors = [
     {name = "Marcello Costamagna"},
 ]
 
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
