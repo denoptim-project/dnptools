@@ -1,6 +1,10 @@
 name: Python Package using Conda
 
-on: [push]
+#TODO go back to this
+#on: [push]
+on:
+  release:
+    types: [published]
 
 jobs:
   build-linux:
