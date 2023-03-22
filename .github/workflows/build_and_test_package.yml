@@ -4,9 +4,8 @@
 name: 'Build and Test Python Package'
 
 on:
-#TODO reactivate
-#  push:
-#    branches: [ "main" ]
+  push:
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
