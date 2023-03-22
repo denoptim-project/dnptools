@@ -1,0 +1,29 @@
+name: 'Testing new policy'
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  try-it-out:
+    runs-on: ubuntu-latest
+    steps:
+    - name: One
+      run: |
+        echo "action_state=yellow" >> $GITHUB_ENV
+    - name: Use the value
+      id: step_two
+      run: |
+        echo "Variable value is ${{ env.action_state }}"
+
+    - name: Get version identifier
+      id: get_version
+      run: |
+        echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+    - name: Report version
+      run: |
+        echo "Version is ${{ env.VERSION }}"
+      env:
+        DNPTOOLS_VERSION: ${{ env.VERSION }}
+

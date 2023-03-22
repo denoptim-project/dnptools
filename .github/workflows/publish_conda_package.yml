@@ -24,8 +24,7 @@ jobs:
     - name: Get version identifier
       id: get_version
       run: |
-        echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/v}
-        echo ${GITHUB_REF#refs/tags/v}
+        echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
     - name: Setup Miniconda
       uses: conda-incubator/setup-miniconda@v2
@@ -41,5 +40,5 @@ jobs:
         conda config --set anaconda_upload yes
         conda build -c conda-forge  .
       env:
-        DNPTOOLS_VERSION: ${{ steps.get_version.outputs.VERSION }}
+        DNPTOOLS_VERSION: ${{ env.VERSION }}
 
