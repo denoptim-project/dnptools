@@ -35,16 +35,20 @@ jobs:
     - name: Bash
       shell: bash -el {0}
       run: |
+        conda build -V
         conda info
         conda list
+        conda build -V
 
     - name: Bash2
       run: |
+        conda build -V
         conda info
         conda list
 
     - name: Build package and publish
       run: |
+        conda build -V
         conda info
         conda list
         conda build -c conda-forge  .
