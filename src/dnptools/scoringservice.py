@@ -48,7 +48,7 @@ class ScoreError(Exception):
         self.json_errmsg = {JSON_KEY_ERROR: f"#{MY_NAME}: {message}"}
 
 
-def start(scoring_function, address: tuple[str | None, int]):
+def start(scoring_function, address: tuple[str, int]):
     """Starts a separate thread that creates and runs the server.
 
     Parameters
@@ -56,7 +56,7 @@ def start(scoring_function, address: tuple[str | None, int]):
     scoring_function :
         The function the server should use to calculate the score for a given
         request.
-    address : tuple[str | None, int]
+    address : tuple[str, int]
         The hostname and port number where to server should accept requests.
     """
     return start(scoring_function, address[0], address[1])
@@ -172,7 +172,7 @@ def __make_score_request_handler(scoring_function):
     return ScoreRequestHandler
 
 
-def stop(address: tuple[str | None, int]):
+def stop(address: tuple[str, int]):
     """Sends a shutdown request to the server to close it for good.
 
     Parameters
