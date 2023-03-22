@@ -1,13 +1,11 @@
 {% set name = "dnptools" %}
-{% set version = "0.0.1" %}
 
 package:
   name: {{ name|lower }}
-  version: {{ version }}
+  version: {{ environ.get('DENOPTIM_VERSION', '') }}
 
 source:
-  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/dnptools-{{ version }}.tar.gz
-  sha256: 369342b4a07cbfcc8ef9ad6b1b8cd7ed668b678f4e816404fc9fb2de580fa55c
+  path: ..
 
 build:
   noarch: python
@@ -38,3 +36,4 @@ about:
 extra:
   recipe-maintainers:
     - marco-foscato
+

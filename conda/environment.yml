@@ -1,8 +1,7 @@
-name: dnptools_devel
+name: make_conda_dnptools_pkg
 channels:
   - conda-forge
 dependencies:
   - python
   - python-build
   - pytest
-  - twine
