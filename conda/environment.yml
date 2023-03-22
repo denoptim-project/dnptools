@@ -1,10 +1,7 @@
 name: make_conda_dnptools_pkg
 channels:
-  - conda-forge
+  - defaults
 dependencies:
   - python=3.8
-  - python-build
-  - pytest
-  - conda-build
   - anaconda-client
-
+  - conda-build
