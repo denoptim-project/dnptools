@@ -33,10 +33,10 @@ jobs:
         environment-file: conda/environment.yml
 
     - name: Bash
-        shell: bash -el {0}
-        run: |
-          conda info
-          conda list
+      shell: bash -el {0}
+      run: |
+        conda info
+        conda list
 
     - name: Build package and publish
       run: |
