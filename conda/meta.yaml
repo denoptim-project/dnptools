@@ -1,9 +1,6 @@
-{% set name = "dnptools" %}
-
 package:
-  name: {{ name|lower }}
-  version: '0.0.3'
-#  version: {{ environ.get('DNPTOOLS_VERSION', '') }}
+  name: dnptools
+  version: {{ environ.get('DNPTOOLS_VERSION', '') }}
 
 source:
   path: ..

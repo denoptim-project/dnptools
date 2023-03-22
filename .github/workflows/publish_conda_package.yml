@@ -1,13 +1,12 @@
 name: 'Build Conda Package and Upload to Anaconda'
 
-# Tag creation correspond most often, but nor necessarily, to release publication. This this workflow is also triggered by the latter, but can be triggeren manually by creation of a tag.
+# Tag creation correspond most often, but nor necessarily, to release i
+# publication. Thus, this workflow is also triggered by the latter, but can be
+# triggeren manually by creation of a tag.
 on:
   push:
-    branches: [ "main" ]
-#TODO reactivate
-#  push:
-#    tags:
-#      - v[0-9]+.[0-9]+.[0-9]+
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+
 
 env:
   ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
