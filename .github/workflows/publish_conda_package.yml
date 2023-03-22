@@ -38,6 +38,19 @@ jobs:
         conda info
         conda list
 
+    - name: Bash2
+      run: |
+        conda info
+        conda list
+
+    - name: Build package and publish
+      run: |
+        conda info
+        conda list
+        conda build -c conda-forge  .
+      env:
+        DNPTOOLS_VERSION: ${{ steps.get_version.outputs.VERSION }}
+
     - name: Build package and publish
       run: |
         conda config --set anaconda_upload yes
