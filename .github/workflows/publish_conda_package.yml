@@ -41,12 +41,14 @@ jobs:
         conda build -V
 
     - name: Bash2
+      shell: bash -el {0}
       run: |
         conda build -V
         conda info
         conda list
 
     - name: Build package and publish
+      shell: bash -el {0}
       run: |
         conda build -V
         conda info
