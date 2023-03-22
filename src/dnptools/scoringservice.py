@@ -23,6 +23,7 @@ import json
 import socketserver
 import time
 from threading import Thread
+from typing import Tuple
 
 MY_NAME = "scoringservice"
 
@@ -48,7 +49,7 @@ class ScoreError(Exception):
         self.json_errmsg = {JSON_KEY_ERROR: f"#{MY_NAME}: {message}"}
 
 
-def start(scoring_function, address: tuple[str, int]):
+def start(scoring_function, address: Tuple[str, int]):
     """Starts a separate thread that creates and runs the server.
 
     Parameters
@@ -56,7 +57,7 @@ def start(scoring_function, address: tuple[str, int]):
     scoring_function :
         The function the server should use to calculate the score for a given
         request.
-    address : tuple[str, int]
+    address : Tuple[str, int]
         The hostname and port number where to server should accept requests.
     """
     return start(scoring_function, address[0], address[1])
@@ -172,12 +173,13 @@ def __make_score_request_handler(scoring_function):
     return ScoreRequestHandler
 
 
-def stop(address: tuple[str, int]):
+def stop(address: Tuple[str, int]):
     """Sends a shutdown request to the server to close it for good.
 
     Parameters
     ----------
-    address : the tuple defining the address of the scoring server to stop. for
+    address : Tuple[str, int]
+        the tuple defining the address of the scoring server to stop. for
         example `(host, port)` where `host` is the hostname and `port` the port
         number as an integer.
     """
