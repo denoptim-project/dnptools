@@ -32,14 +32,18 @@ jobs:
         activate-environment: anaconda-client-env
         environment-file: conda/environment.yml
 
+    - name: Bash
+        shell: bash -el {0}
+        run: |
+          conda info
+          conda list
+
     - name: Build package and publish
       run: |
         conda config --set anaconda_upload yes
         conda list
         conda info --env
-        conda activate anaconda-client-env
-        conda list
-        conda info --env
+        conda info
         conda build -c conda-forge  .
       env:
         DNPTOOLS_VERSION: ${{ steps.get_version.outputs.VERSION }}
