@@ -1,4 +1,4 @@
-name: 'Publish Conda Package'
+name: 'Build Conda Package and Upload to Anaconda'
 
 # Tag creation correspond most often, but nor necessarily, to release publication. This this workflow is also triggered by the latter, but can be triggeren manually by creation of a tag.
 on:
