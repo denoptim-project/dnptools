@@ -21,14 +21,18 @@ import socket
 import sys
 import json
 import socketserver
+import time
 from threading import Thread
 
 MY_NAME = "scoringservice"
+
 
 # NB: the strings defined here are part of a convention.
 JSON_KEY_SMILES = 'SMILES'
 JSON_KEY_SCORE = 'SCORE'
 JSON_KEY_ERROR = 'ERROR'
+
+SERVER_START_MAX_TIME = 5  # seconds
 
 
 class ScoreError(Exception):
@@ -44,7 +48,21 @@ class ScoreError(Exception):
         self.json_errmsg = {JSON_KEY_ERROR: f"#{MY_NAME}: {message}"}
 
 
-def start(scoring_function, host: str = "localhost", port: int = 0xf17):
+def start(scoring_function, address: tuple[str | None, int]):
+    """Starts a separate thread that creates and runs the server.
+
+    Parameters
+    ----------
+    scoring_function :
+        The function the server should use to calculate the score for a given
+        request.
+    address : tuple[str | None, int]
+        The hostname and port number where to server should accept requests.
+    """
+    return start(scoring_function, address[0], address[1])
+
+
+def start(scoring_function, host: str = 'localhost', port: int = 0):
     """Starts a separate thread that creates and runs the server.
 
     Parameters
@@ -53,16 +71,52 @@ def start(scoring_function, host: str = "localhost", port: int = 0xf17):
         The function the server should use to calculate the score for a given
         request.
     host : str
+        The identifier of the host running the server that should accept
+        requests.
         Either a hostname in internet domain notation like ``host.name.org`` or
         an IPv4 address like ``100.50.200.5``.
     port : int
-        the port number."""
+        the port number where the server should accept requests. By default,
+        i.e., with a value of 0, we search for an available port.
+    """
+    # Find available port: we assume it stays available for as long as it takes
+    # to start the server.
+    if port == 0:
+        sock = socket.socket()
+        sock.bind((host, 0))
+        port = sock.getsockname()[1]
+        sock.close()
+
+    # Try to start the server in another thread
     serverThread = Thread(target=__run_server, args=[scoring_function,
                                                      host, port])
     serverThread.start()
 
+    # Verify the server is up before returning
+    sock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    door_is_closed = True
+    start_time = time.time()
+    waited_time = 0
+    while door_is_closed and (waited_time < SERVER_START_MAX_TIME):
+        response = sock2.connect_ex((host, port))
+        if response == 0:
+            door_is_closed = False
+        else:
+            time.sleep(1)
+            waited_time = time.time() - start_time
 
-def __run_server(scoring_function, host: str = "localhost", port: int = 0xf17):
+    if door_is_closed:
+        # noinspection PyBroadException
+        try:
+            stop((host, port))
+        except Exception:
+            pass
+        raise Exception('Max time for server startup reached. Abandoning.')
+
+    return host, port
+
+
+def __run_server(scoring_function, host: str, port: int):
     """Start the server and keeps it running forever.
 
     Parameters
@@ -101,7 +155,9 @@ def __make_score_request_handler(scoring_function):
             try:
                 json_msg = json.loads(message)
             except json.decoder.JSONDecodeError as e:
+                return
                 raise ScoreError(f"Invalid JSON: {e}")
+            answer = ''
             try:
                 score = scoring_function(json_msg)
                 answer = json.dumps({
@@ -116,19 +172,19 @@ def __make_score_request_handler(scoring_function):
     return ScoreRequestHandler
 
 
-def stop(host: str = "localhost", port: int = 0xf17):
+def stop(address: tuple[str | None, int]):
     """Sends a shutdown request to the server to close it for good.
 
     Parameters
     ----------
-    host : str
-        Either a hostname in internet domain notation like ``host.name.org`` or
-        an IPv4 address like ``100.50.200.5``.
-    port : int
-        the port number.
+    address : the tuple defining the address of the scoring server to stop. for
+        example `(host, port)` where `host` is the hostname and `port` the port
+        number as an integer.
     """
     try:
-        socket_connection = socket.create_connection((host, port))
+        socket_connection = socket.create_connection(address)
         socket_connection.send('shutdown'.encode('utf8'))
     except Exception as e:
         raise Exception('Could not communicate with socket server.', e)
+
+

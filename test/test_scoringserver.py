@@ -1,6 +1,7 @@
 import json
 import math
 import socket
+import pytest
 from dnptools import scoringservice
 
 
@@ -34,7 +35,7 @@ def scoring_function(json_msg):
     return response
 
 
-def __get_score(smiles, host, port):
+def __get_score(smiles, address):
     """
     Wrapper that takes a string and puts it as the value of the JSON member
     'SMILES'.
@@ -43,10 +44,8 @@ def __get_score(smiles, host, port):
     ----------
     smiles : str
         the string to use as SMILES.
-    host : str
-        the identifier of the host
-    port : int
-        the port number
+    address : tuple (host : str, port : int)
+        the identifier of the host and port number.
 
     Returns
     -------
@@ -56,7 +55,7 @@ def __get_score(smiles, host, port):
         scoringservice.JSON_KEY_SMILES: smiles,
     })
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((host, port))
+        s.connect(address)
         s.sendall(jsonRequest.encode('utf8'))
         s.shutdown(socket.SHUT_WR)
         response = b''
@@ -80,14 +79,17 @@ def __get_score(smiles, host, port):
     return score
 
 
-def test_scoringservice():
-    # find available port: we assume it stays available for a while!
-    sock = socket.socket()
-    host = ''
-    sock.bind((host, 0))
-    port = sock.getsockname()[1]
-    sock.close()
-    scoringservice.start(scoring_function, host, port)
-    score = __get_score('C=C', host, port)
+def test_scoring_service():
+    address = scoringservice.start(scoring_function)
+    score = __get_score('C=C', address)
     assert math.isclose(2**2.5, score)
-    scoringservice.stop(host, port)
+    scoringservice.stop(address)
+
+
+def test_busy_address():
+    address = scoringservice.start(scoring_function)
+    with pytest.raises(Exception):
+        scoringservice.start(scoring_function, address)
+    scoringservice.stop(address)
+
+
