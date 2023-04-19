@@ -22,6 +22,10 @@ When you do not need the scoring service any more, use the following to stop the
 ```
 scoringservice.stop('localhost',3863)
 ```
+Logging can be controlled as follows:
+```
+scoringservice.logger.setLevel(logging.DEBUG)
+```
 
 ## Install
 The package is available on <a href="https://pypi.org/project/dnptools/">pypi</a> and <a href="https://anaconda.org/denoptim-project/dnptools">anaconda</a>, so install it with 
