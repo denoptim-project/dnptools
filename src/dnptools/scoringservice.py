@@ -24,6 +24,7 @@ import socketserver
 import time
 from threading import Thread
 from typing import Tuple
+import logging
 
 MY_NAME = "scoringservice"
 
@@ -34,6 +35,15 @@ JSON_KEY_SCORE = 'SCORE'
 JSON_KEY_ERROR = 'ERROR'
 
 SERVER_START_MAX_TIME = 5  # seconds
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.WARNING)
+log_stream_handler = logging.StreamHandler(sys.stdout)
+log_stream_handler.setLevel(logging.DEBUG)
+log_formatter = logging.Formatter(
+    "%(name)s %(asctime)s %(levelname)s %(message)s")
+log_stream_handler.setFormatter(log_formatter)
+logger.addHandler(log_stream_handler)
 
 
 class ScoreError(Exception):
@@ -83,14 +93,18 @@ def start(scoring_function, host: str = 'localhost', port: int = 0):
     # Find available port: we assume it stays available for as long as it takes
     # to start the server.
     if port == 0:
+        logger.debug('Searching for an available port')
         sock = socket.socket()
         sock.bind((host, 0))
         port = sock.getsockname()[1]
+        logger.debug(f'Port {port} is available')
         sock.close()
 
     # Try to start the server in another thread
     serverThread = Thread(target=__run_server, args=[scoring_function,
                                                      host, port])
+
+    logger.debug('Starting server thread')
     serverThread.start()
 
     # Verify the server is up before returning
@@ -100,6 +114,8 @@ def start(scoring_function, host: str = 'localhost', port: int = 0):
     waited_time = 0
     while door_is_closed and (waited_time < SERVER_START_MAX_TIME):
         response = sock2.connect_ex((host, port))
+        logger.debug(f"Verifying that server is up and running:"
+                     f" waited {waited_time}")
         if response == 0:
             door_is_closed = False
         else:
@@ -114,6 +130,7 @@ def start(scoring_function, host: str = 'localhost', port: int = 0):
             pass
         raise Exception('Max time for server startup reached. Abandoning.')
 
+    logger.debug(f"Server started at {host}:{port}")
     return host, port
 
 
@@ -150,17 +167,22 @@ def __make_score_request_handler(scoring_function):
     class ScoreRequestHandler(socketserver.StreamRequestHandler):
         def handle(self):
             message = self.rfile.read().decode('utf8')
+            logger.debug(f"Handling request {message}")
             if 'shutdown' in message:
+                logger.debug(f"Shutting down server upon JSON request")
                 self.server.shutdown()
+                return
+            if '' == message:
+                logger.debug("Received empty request")
                 return
             try:
                 json_msg = json.loads(message)
             except json.decoder.JSONDecodeError as e:
-                return
-                raise ScoreError(f"Invalid JSON: {e}")
+                raise ScoreError(f"Invalid JSON '{message}': {e}")
             answer = ''
             try:
                 score = scoring_function(json_msg)
+                logger.debug(f"Score is {score}")
                 answer = json.dumps({
                     JSON_KEY_SCORE: score,
                 })
@@ -168,6 +190,7 @@ def __make_score_request_handler(scoring_function):
                 print('Error:', e, file=sys.stderr)
                 answer = json.dumps(e.json_errmsg)
             finally:
+                logger.debug(f"Sending response  {answer}")
                 answer += '\n'
                 self.wfile.write(answer.encode('utf8'))
     return ScoreRequestHandler
@@ -188,5 +211,3 @@ def stop(address: Tuple[str, int]):
         socket_connection.send('shutdown'.encode('utf8'))
     except Exception as e:
         raise Exception('Could not communicate with socket server.', e)
-
-
