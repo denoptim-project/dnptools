@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dnptools"
-version = "0.0.3" #This is the only place where version is defined.
+version = "0.0.4" #This is the only place where version is defined.
 description = "Python utilities for working with DENOPTIM (https://github.com/denoptim-project/DENOPTIM)"
 readme = "README.md"
 requires-python = ">=3.7"
